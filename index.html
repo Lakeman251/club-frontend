@@ -10,20 +10,25 @@
     <body>
   <h1>Club MiniApp</h1>
   <div id="status" class="muted">Проверяю вход…</div>
-  <script>
-    const API_URL = "https://club-backend-rho.vercel.app/";
-const t = new URLSearchParams(location.search).get("t");
-if (!t) {
-  statusEl.innerText = "Нет токена. Открой через кнопку бота.";
-} else {
-  fetch(API_URL + "/api/exchange-link-token", {
-    method: "POST",
-    headers: { "Content-Type":"application/json" },
-    body: JSON.stringify({ token: t })
-  }).then(r=>r.json()).then(d=>{
-    statusEl.innerText = d.ok ? ("Ок ✅ tg_id " + d.tg_id) : ("⛔ " + d.error);
-  });
-}
-  </script>
+<script>
+  const API_URL = "https://club-backend-rho.vercel.app"; 
+  const statusEl = document.getElementById('status');    
+
+  const t = new URLSearchParams(location.search).get("t");
+  if (!t) {
+    statusEl.innerText = "Нет токена. Открой через кнопку бота.";
+  } else {
+    fetch(API_URL + "/api/exchange-link-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: t })
+    })
+    .then(r => r.json())
+    .then(d => {
+      statusEl.innerText = d.ok ? ("Ок ✅ tg_id " + d.tg_id) : ("⛔ " + d.error);
+    })
+    .catch(e => statusEl.innerText = "Сеть: " + e);
+  }
+</script>
 </body>
 </html>
