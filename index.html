@@ -12,24 +12,24 @@
   <div id="status" class="muted">Проверяю вход…</div>
 
   <script>
-    const API_URL = "https://club-backend-rho.vercel.app"; // без завершающего /
-    const statusEl = document.getElementById('status');
+const API_URL = "https://club-backend-rho.vercel.app";
+const statusEl = document.getElementById('status');
+const uid = new URLSearchParams(location.search).get("uid");
 
-    const t = new URLSearchParams(location.search).get("t");
-    if (!t) {
-      statusEl.innerText = "Нет токена. Открой через кнопку бота.";
-    } else {
-      fetch(API_URL + "/api/exchange-link-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: t })
-      })
-      .then(r => r.json())
-      .then(d => {
-        statusEl.innerText = d.ok ? ("Ок ✅ tg_id " + d.tg_id) : ("⛔ " + (d.error || "ошибка"));
-      })
-      .catch(e => { statusEl.innerText = "Сеть: " + e; });
-    }
-  </script>
+if (!uid) {
+  statusEl.innerText = "Нет uid. Открой через кнопку бота.";
+} else {
+  fetch(API_URL + "/api/auth-by-salebot-uid", {
+    method: "POST",
+    headers: { "Content-Type":"application/json" },
+    body: JSON.stringify({ uid })
+  })
+  .then(r => r.json())
+  .then(d => {
+    statusEl.innerText = d.ok ? ("Ок ✅ tg_id " + d.tg_id) : ("⛔ " + (d.error || "нет доступа"));
+  })
+  .catch(e => statusEl.innerText = "Сеть: " + e);
+}
+</script>
 </body>
 </html>
