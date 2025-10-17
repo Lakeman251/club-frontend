@@ -5,31 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Club MiniApp</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>body{font:16px system-ui;margin:24px} .muted{opacity:.6}</style>
+  <style>
+    body { font:16px system-ui; margin:24px; background:#fff; color:#111; }
+    .muted { opacity:.6; margin-top:12px; }
+  </style>
 </head>
 <body>
   <h1>Club MiniApp</h1>
   <div id="status" class="muted">Проверяю вход…</div>
 
   <script>
-const API_URL = "https://club-backend-rho.vercel.app";
-const statusEl = document.getElementById('status');
-const uid = new URLSearchParams(location.search).get("uid");
+  const API_URL = "https://club-backend-rho.vercel.app";
+  const statusEl = document.getElementById('status');
+  const token = new URLSearchParams(location.search).get("t");
 
-if (!uid) {
-  statusEl.innerText = "Нет uid. Открой через кнопку бота.";
-} else {
-  fetch(API_URL + "/api/auth-by-salebot-uid", {
-    method: "POST",
-    headers: { "Content-Type":"application/json" },
-    body: JSON.stringify({ uid })
-  })
-  .then(r => r.json())
-  .then(d => {
-    statusEl.innerText = d.ok ? ("Ок ✅ tg_id " + d.tg_id) : ("⛔ " + (d.error || "нет доступа"));
-  })
-  .catch(e => statusEl.innerText = "Сеть: " + e);
-}
-</script>
+  if (!token) {
+    statusEl.innerText = "Нет токена. Открой через кнопку бота.";
+  } else {
+    fetch(API_URL + "/api/exchange-link-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token })
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        statusEl.innerText = "✅ Вход выполнен. tg_id: " + d.tg_id;
+      } else {
+        statusEl.innerText = "⛔ Ошибка: " + (d.error || "неизвестная ошибка");
+      }
+    })
+    .catch(err => {
+      statusEl.innerText = "Сеть: " + err.message;
+    });
+  }
+  </script>
 </body>
 </html>
