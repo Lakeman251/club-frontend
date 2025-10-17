@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Club MiniApp</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>body{font:16px system-ui;margin:24px} .muted{opacity:.6}</style>
+</head>
+<body>
+  <h1>Club MiniApp</h1>
+  <div id="status" class="muted">Проверяю вход…</div>
+  <script>
+    const API_URL = "https://club-backend-rho.vercel.app";
+    const initData = window.Telegram?.WebApp?.initData || "";
+
+    if (!initData) {
+      document.getElementById('status').innerText =
+        "Открой через кнопку в Telegram-боте. Прямой URL не работает.";
+    } else {
+      fetch(API_URL + "/api/auth-telegram", {
+        method: "POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify({ initData })
+      })
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById('status').innerText =
+          d.ok ? ("Ок ✅ tg_id " + d.tg_id) : ("Доступ запрещён: " + (d.error || "?"));
+      })
+      .catch(e => { document.getElementById('status').innerText = "Сеть: " + e; });
+    }
+  </script>
+</body>
+</html>
