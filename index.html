@@ -30,7 +30,7 @@ if (token) {
   fetch(API_URL + "/api/exchange-link-token", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "include",
+    // credentials не указываем
     body: JSON.stringify({ token })
   }).then(r=>r.json()).then(d=>{
     statusEl.innerText = d.ok ? ("✅ Вход выполнен. tg_id: " + d.tg_id) : ("⛔ " + (d.error || "неизвестная ошибка"));
