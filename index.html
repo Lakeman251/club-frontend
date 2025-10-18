@@ -19,25 +19,49 @@ const API_URL = "https://club-backend-rho.vercel.app";
 const statusEl = document.getElementById('status');
 const token = new URLSearchParams(location.search).get("t");
 
-function me() {
-  fetch(API_URL + "/api/me", { method: "GET", credentials: "include" })
-    .then(r=>r.json()).then(d=>{
-      statusEl.innerText = d.ok ? ("✅ Сессия. tg_id: " + d.tg_id) : ("⛔ " + (d.error||"no_session"));
-    }).catch(e=> statusEl.innerText = "Сеть: " + e.message);
-}
+// Проверяем, открыт ли MiniApp внутри Telegram
+const isTelegram = window.Telegram?.WebApp?.initDataUnsafe?.user !== undefined;
 
-if (token) {
-  fetch(API_URL + "/api/exchange-link-token", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ token })
-  }).then(r=>r.json()).then(d=>{
-    statusEl.innerText = d.ok ? ("✅ Вход выполнен. tg_id: " + d.tg_id) : ("⛔ " + (d.error || "неизвестная ошибка"));
-    if (d.ok) history.replaceState(null, "", location.pathname); // убираем ?t=
-  }).catch(err=> statusEl.innerText = "Сеть: " + err.message);
+if (!isTelegram) {
+  statusEl.innerText = "⚠️ Открой MiniApp через Telegram.";
 } else {
-  me(); // пробуем сессию
+  // Функция проверки текущей сессии
+  function me() {
+    fetch(API_URL + "/api/me", { method: "GET", credentials: "include" })
+      .then(r => r.json())
+      .then(d => {
+        statusEl.innerText = d.ok
+          ? ("✅ Сессия активна. tg_id: " + d.tg_id)
+          : ("⛔ " + (d.error || "Сессия не найдена"));
+      })
+      .catch(e => {
+        statusEl.innerText = "⚠️ Сеть недоступна. Попробуй позже.";
+      });
+  }
+
+  // Если есть токен в URL — обмениваем его
+  if (token) {
+    fetch(API_URL + "/api/exchange-link-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ token })
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok) {
+          statusEl.innerText = "✅ Вход выполнен. tg_id: " + d.tg_id;
+          history.replaceState(null, "", location.pathname); // убираем ?t=
+        } else {
+          statusEl.innerText = "⛔ Ошибка: " + (d.error || "неизвестная ошибка");
+        }
+      })
+      .catch(err => {
+        statusEl.innerText = "⚠️ Сеть недоступна. Попробуй позже.";
+      });
+  } else {
+    me(); // пробуем по сессии
+  }
 }
 </script>
 </body>
