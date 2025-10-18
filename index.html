@@ -19,8 +19,7 @@ const API_URL = "https://club-backend-rho.vercel.app";
 const statusEl = document.getElementById('status');
 const token = new URLSearchParams(location.search).get("t");
 
-// Ждём, пока Telegram SDK инициализируется
-window.addEventListener("DOMContentLoaded", () => {
+function startApp() {
   const tg = window.Telegram?.WebApp;
   const isTelegram = !!tg && !!tg.initDataUnsafe?.user;
 
@@ -29,7 +28,6 @@ window.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // === функция проверки сессии ===
   function me() {
     fetch(API_URL + "/api/me", { method: "GET", credentials: "include" })
       .then(r => r.json())
@@ -43,7 +41,6 @@ window.addEventListener("DOMContentLoaded", () => {
       });
   }
 
-  // === логика обмена токена ===
   if (token) {
     fetch(API_URL + "/api/exchange-link-token", {
       method: "POST",
@@ -55,7 +52,7 @@ window.addEventListener("DOMContentLoaded", () => {
       .then(d => {
         if (d.ok) {
           statusEl.innerText = "✅ Вход выполнен. tg_id: " + d.tg_id;
-          history.replaceState(null, "", location.pathname); // убираем ?t=
+          history.replaceState(null, "", location.pathname);
         } else {
           statusEl.innerText = "⛔ Ошибка: " + (d.error || "неизвестная ошибка");
         }
@@ -64,9 +61,18 @@ window.addEventListener("DOMContentLoaded", () => {
         statusEl.innerText = "⚠️ Ошибка сети. Попробуй позже.";
       });
   } else {
-    me(); // пробуем по сессии
+    me();
   }
-});
+}
+
+// ждём готовности Telegram SDK
+if (window.Telegram?.WebApp) {
+  Telegram.WebApp.ready();
+  setTimeout(startApp, 300); // чуть ждём, чтобы initData успел подтянуться
+} else {
+  // fallback: если SDK не подгрузился вообще
+  window.addEventListener("load", startApp);
+}
 </script>
 </body>
 </html>
