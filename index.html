@@ -23,19 +23,17 @@
       statusEl.innerText = "Нет токена. Открой через кнопку бота.";
     } else {
       fetch(API_URL + "/api/exchange-link-token", {
-        method: "POST",
-        headers: { "Content-Type":"application/json" },
-        // ВАЖНО: никаких credentials и никаких /api/me
-        body: JSON.stringify({ token })
-      })
+      method: "POST",
+      headers: { "Content-Type": "text/plain" }, // <-- без preflight
+      body: token
+        })
       .then(r => r.json())
       .then(d => {
-        statusEl.innerText = d.ok
-          ? ("✅ Вход выполнен. tg_id: " + d.tg_id)
-          : ("⛔ " + (d.error || "неизвестная ошибка"));
+      statusEl.innerText = d.ok
+    ? ("✅ Вход выполнен. tg_id: " + d.tg_id)
+    : ("⛔ " + (d.error || "неизвестная ошибка"));
       })
-      .catch(err => {
-        statusEl.innerText = "Сеть: " + err.message;
+.catch(err => statusEl.innerText = "Сеть: " + err.message);
       });
     }
   </script>
