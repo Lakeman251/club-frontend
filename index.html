@@ -19,13 +19,17 @@ const API_URL = "https://club-backend-rho.vercel.app";
 const statusEl = document.getElementById('status');
 const token = new URLSearchParams(location.search).get("t");
 
-// Проверяем, открыт ли MiniApp внутри Telegram
-const isTelegram = window.Telegram?.WebApp?.initDataUnsafe?.user !== undefined;
+// Ждём, пока Telegram SDK инициализируется
+window.addEventListener("DOMContentLoaded", () => {
+  const tg = window.Telegram?.WebApp;
+  const isTelegram = !!tg && !!tg.initDataUnsafe?.user;
 
-if (!isTelegram) {
-  statusEl.innerText = "⚠️ Открой MiniApp через Telegram.";
-} else {
-  // Функция проверки текущей сессии
+  if (!isTelegram) {
+    statusEl.innerText = "⚠️ Открой MiniApp через Telegram.";
+    return;
+  }
+
+  // === функция проверки сессии ===
   function me() {
     fetch(API_URL + "/api/me", { method: "GET", credentials: "include" })
       .then(r => r.json())
@@ -34,12 +38,12 @@ if (!isTelegram) {
           ? ("✅ Сессия активна. tg_id: " + d.tg_id)
           : ("⛔ " + (d.error || "Сессия не найдена"));
       })
-      .catch(e => {
-        statusEl.innerText = "⚠️ Сеть недоступна. Попробуй позже.";
+      .catch(() => {
+        statusEl.innerText = "⚠️ Ошибка сети. Попробуй позже.";
       });
   }
 
-  // Если есть токен в URL — обмениваем его
+  // === логика обмена токена ===
   if (token) {
     fetch(API_URL + "/api/exchange-link-token", {
       method: "POST",
@@ -56,13 +60,13 @@ if (!isTelegram) {
           statusEl.innerText = "⛔ Ошибка: " + (d.error || "неизвестная ошибка");
         }
       })
-      .catch(err => {
-        statusEl.innerText = "⚠️ Сеть недоступна. Попробуй позже.";
+      .catch(() => {
+        statusEl.innerText = "⚠️ Ошибка сети. Попробуй позже.";
       });
   } else {
     me(); // пробуем по сессии
   }
-}
+});
 </script>
 </body>
 </html>
