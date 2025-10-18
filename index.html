@@ -19,25 +19,53 @@ const API_URL = "https://club-backend-rho.vercel.app";
 const statusEl = document.getElementById('status');
 const token = new URLSearchParams(location.search).get("t");
 
+// Проверяем сессию (cookie)
 function me() {
-  fetch(API_URL + "/api/me", { method: "GET", credentials: "include" })
-    .then(r=>r.json()).then(d=>{
-      statusEl.innerText = d.ok ? ("✅ Сессия. tg_id: " + d.tg_id) : ("⛔ " + (d.error||"no_session"));
-    }).catch(e=> statusEl.innerText = "Сеть: " + e.message);
+  fetch(API_URL + "/api/me", {
+    method: "GET",
+    credentials: "include"
+  })
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        statusEl.innerText = "✅ Сессия активна. tg_id: " + d.tg_id;
+      } else {
+        statusEl.innerText = "⛔ " + (d.error || "no_session");
+      }
+    })
+    .catch(e => statusEl.innerText = "Сеть: " + e.message);
 }
 
+// Обмен токена
 if (token) {
   fetch(API_URL + "/api/exchange-link-token", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    // ВАЖНО: БЕЗ credentials здесь, чтобы не было CORS-префлайта
+    credentials: "include", // важно! чтобы cookie сохранилось
     body: JSON.stringify({ token })
-  }).then(r=>r.json()).then(d=>{
-    statusEl.innerText = d.ok ? ("✅ Вход выполнен. tg_id: " + d.tg_id) : ("⛔ " + (d.error || "неизвестная ошибка"));
-    if (d.ok) history.replaceState(null, "", location.pathname); // убираем ?t=
-  }).catch(err=> statusEl.innerText = "Сеть: " + err.message);
+  })
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        statusEl.innerText = "✅ Вход выполнен. tg_id: " + d.tg_id;
+        // убираем ?t= из URL, чтобы дальше использовать только cookie
+        history.replaceState(null, "", location.pathname);
+      } else {
+        // если токен истёк или неверный — пробуем войти по сессии
+        if (["expired_token", "invalid_signature", "invalid_token_format"].includes(d.error)) {
+          me();
+        } else {
+          statusEl.innerText = "⛔ " + (d.error || "неизвестная ошибка");
+        }
+      }
+    })
+    .catch(err => {
+      statusEl.innerText = "Сеть: " + err.message;
+      me(); // на сетевых ошибках тоже пробуем сессию
+    });
+
 } else {
-  me(); // пробуем сессию
+  me(); // нет токена — пробуем войти по сессии
 }
 </script>
 </body>
