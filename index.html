@@ -15,29 +15,30 @@
   <div id="status" class="muted">Проверяю вход…</div>
 
   <script>
-    const API_URL = "https://club-backend-rho.vercel.app";
-    const statusEl = document.getElementById('status');
-    const token = new URLSearchParams(location.search).get("t");
+const API_URL = "https://club-backend-rho.vercel.app";
+const statusEl = document.getElementById('status');
+const token = new URLSearchParams(location.search).get("t");
 
-    if (!token) {
-      statusEl.innerText = "Нет токена. Открой через кнопку бота.";
-    } else {
-      fetch(API_URL + "/api/exchange-link-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // ВАЖНО: без credentials!
-        body: JSON.stringify({ token })
-      })
-      .then(r => r.json())
-      .then(d => {
-        statusEl.innerText = d.ok
-          ? ("✅ Вход выполнен. tg_id: " + d.tg_id)
-          : ("⛔ " + (d.error || "неизвестная ошибка"));
-      })
-      .catch(err => {
-        statusEl.innerText = "Сеть: " + err.message;
-      });
-    }
-  </script>
+function me() {
+  fetch(API_URL + "/api/me", { method: "GET", credentials: "include" })
+    .then(r=>r.json()).then(d=>{
+      statusEl.innerText = d.ok ? ("✅ Сессия. tg_id: " + d.tg_id) : ("⛔ " + (d.error||"no_session"));
+    }).catch(e=> statusEl.innerText = "Сеть: " + e.message);
+}
+
+if (token) {
+  fetch(API_URL + "/api/exchange-link-token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    // ВАЖНО: БЕЗ credentials здесь, чтобы не было CORS-префлайта
+    body: JSON.stringify({ token })
+  }).then(r=>r.json()).then(d=>{
+    statusEl.innerText = d.ok ? ("✅ Вход выполнен. tg_id: " + d.tg_id) : ("⛔ " + (d.error || "неизвестная ошибка"));
+    if (d.ok) history.replaceState(null, "", location.pathname); // убираем ?t=
+  }).catch(err=> statusEl.innerText = "Сеть: " + err.message);
+} else {
+  me(); // пробуем сессию
+}
+</script>
 </body>
 </html>
