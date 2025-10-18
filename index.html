@@ -19,59 +19,25 @@ const API_URL = "https://club-backend-rho.vercel.app";
 const statusEl = document.getElementById('status');
 const token = new URLSearchParams(location.search).get("t");
 
-function startApp() {
-  const tg = window.Telegram?.WebApp;
-  const isTelegram = !!tg && !!tg.initDataUnsafe?.user;
-
-  if (!isTelegram) {
-    statusEl.innerText = "⚠️ Открой MiniApp через Telegram.";
-    return;
-  }
-
-  function me() {
-    fetch(API_URL + "/api/me", { method: "GET", credentials: "include" })
-      .then(r => r.json())
-      .then(d => {
-        statusEl.innerText = d.ok
-          ? ("✅ Сессия активна. tg_id: " + d.tg_id)
-          : ("⛔ " + (d.error || "Сессия не найдена"));
-      })
-      .catch(() => {
-        statusEl.innerText = "⚠️ Ошибка сети. Попробуй позже.";
-      });
-  }
-
-  if (token) {
-    fetch(API_URL + "/api/exchange-link-token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ token })
-    })
-      .then(r => r.json())
-      .then(d => {
-        if (d.ok) {
-          statusEl.innerText = "✅ Вход выполнен. tg_id: " + d.tg_id;
-          history.replaceState(null, "", location.pathname);
-        } else {
-          statusEl.innerText = "⛔ Ошибка: " + (d.error || "неизвестная ошибка");
-        }
-      })
-      .catch(() => {
-        statusEl.innerText = "⚠️ Ошибка сети. Попробуй позже.";
-      });
-  } else {
-    me();
-  }
+function me() {
+  fetch(API_URL + "/api/me", { method: "GET", credentials: "include" })
+    .then(r=>r.json()).then(d=>{
+      statusEl.innerText = d.ok ? ("✅ Сессия. tg_id: " + d.tg_id) : ("⛔ " + (d.error||"no_session"));
+    }).catch(e=> statusEl.innerText = "Сеть: " + e.message);
 }
 
-// ждём готовности Telegram SDK
-if (window.Telegram?.WebApp) {
-  Telegram.WebApp.ready();
-  setTimeout(startApp, 300); // чуть ждём, чтобы initData успел подтянуться
+if (token) {
+  fetch(API_URL + "/api/exchange-link-token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ token })
+  }).then(r=>r.json()).then(d=>{
+    statusEl.innerText = d.ok ? ("✅ Вход выполнен. tg_id: " + d.tg_id) : ("⛔ " + (d.error || "неизвестная ошибка"));
+    if (d.ok) history.replaceState(null, "", location.pathname); // убираем ?t=
+  }).catch(err=> statusEl.innerText = "Сеть: " + err.message);
 } else {
-  // fallback: если SDK не подгрузился вообще
-  window.addEventListener("load", startApp);
+  me(); // пробуем сессию
 }
 </script>
 </body>
